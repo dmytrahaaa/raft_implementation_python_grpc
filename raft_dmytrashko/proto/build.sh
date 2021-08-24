@@ -1,0 +1,1 @@
+python -m grpc_tools.protoc --proto_path=. raft.proto --python_out=. --grpc_python_out=.

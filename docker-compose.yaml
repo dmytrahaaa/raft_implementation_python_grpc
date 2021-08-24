@@ -1,0 +1,72 @@
+version: '3.8'
+
+networks:
+  localnet:
+    attachable: true
+
+services:
+
+  raft-node-1:
+    container_name: raft-1
+    build:
+      context: raft_dmytrashko/
+      dockerfile: Dockerfile
+    environment:
+      PYTHONUNBUFFERED: 1
+    command: python3 raft_server.py 10001 1
+    ports:
+      - "10001:10001"
+    networks:
+      - localnet
+
+  raft-node-2:
+    container_name: raft-2
+    build:
+      context: raft_dmytrashko/
+      dockerfile: Dockerfile
+    environment:
+      PYTHONUNBUFFERED: 1
+    command: python3 raft_server.py 10002 2
+    ports:
+      - "10002:10002"
+    networks:
+      - localnet
+
+  raft-node-3:
+    container_name: raft-3
+    build:
+      context: raft_dmytrashko/
+      dockerfile: Dockerfile
+    environment:
+      PYTHONUNBUFFERED: 1
+    command: python3 raft_server.py 10003 3
+    ports:
+      - "10003:10003"
+    networks:
+      - localnet
+
+  raft-node-4:
+    container_name: raft-4
+    build:
+      context: raft_dmytrashko/
+      dockerfile: Dockerfile
+    environment:
+      PYTHONUNBUFFERED: 1
+    command: python3 raft_server.py 10004 4
+    ports:
+      - "10004:10004"
+    networks:
+      - localnet
+
+  raft-node-5:
+    container_name: raft-5
+    build:
+      context: raft_dmytrashko/
+      dockerfile: Dockerfile
+    environment:
+      PYTHONUNBUFFERED: 1
+    command: python3 raft_server.py 10005 5
+    ports:
+      - "10005:10005"
+    networks:
+      - localnet
