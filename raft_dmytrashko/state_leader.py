@@ -15,7 +15,7 @@ class Leader(State):
         self.current_role = Roles.Leader
 
     def state_action(self):
-        print('Leader')
+        print('Leader. Current term is {}'.format(self.current_term))
         if time() > self.timeout:
             print("Leader sends requests")
             prev_log_index = self.last_log_index
@@ -119,3 +119,19 @@ class Leader(State):
             self.commit_index = self.last_log_index
 
         return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=True)
+
+    def vote(self, req, context):
+        log_ok = ((req.lastLogTerm > self.last_log_term) or (
+                req.lastLogTerm == self.last_log_term and req.lastLogIndex >= self.last_log_index))
+        term_ok = ((req.term > self.current_term) or (
+                req.term == self.current_term and self.voted_for in (None, req.candidateId)))
+
+        vote_granted = False
+        if term_ok and log_ok:
+            self.timeout = time() + randint(3, 12)
+            self.current_term = req.term
+            self.current_role = Roles.Follower
+            self.role = self.server.change_state(self, Roles.Follower)
+            self.voted_for = req.candidateId
+            vote_granted = True
+        return pb2.ResponseVoteRPC(term=self.current_term, voteGranted=vote_granted)

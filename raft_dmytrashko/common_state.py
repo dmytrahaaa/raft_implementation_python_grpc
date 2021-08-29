@@ -51,19 +51,3 @@ class State:
         self.last_log_term = base_state.last_log_term
         self.timeout = base_state.timeout
         self.majority = base_state.majority
-
-    def vote(self, req, context):
-        log_ok = ((req.lastLogTerm > self.last_log_term) or (
-                req.lastLogTerm == self.last_log_term and req.lastLogIndex >= self.last_log_index))
-        term_ok = ((req.term > self.current_term) or (
-                req.term == self.current_term and self.voted_for in (None, req.candidateId)))
-
-        vote_granted = False
-        if term_ok and log_ok:
-            self.timeout = time() + randint(3, 12)
-            self.current_term = req.term
-            self.current_role = Roles.Follower
-            self.voted_for = req.candidateId
-            vote_granted = True
-        return pb2.ResponseVoteRPC(term=self.current_term, voteGranted=vote_granted)
-

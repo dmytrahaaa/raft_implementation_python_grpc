@@ -13,7 +13,7 @@ class Candidate(State):
         if time() > self.timeout:
             self.current_term += 1
             self.votes_received = 1
-            print('Candidate sends vote requests')
+            print('Candidate sends vote requests. Current term is {}'.format(self.current_term))
             req = pb2.RequestVoteRPC(term=self.current_term, candidateId=self.id,
                                      lastLogIndex=self.last_log_index,
                                      lastLogTerm=self.last_log_term)
@@ -47,14 +47,30 @@ class Candidate(State):
             print("Cannot connect " + "with error: " + str(e))
 
 
-def append_entries(self, req):
-    if req.term > self.current_term or req.prevLogTerm > self.last_log_term \
-            or (req.prevLogTerm == self.last_log_term and req.prevLogIndex >= self.last_log_index):
-        self.current_term = req.term
-        self.voted_for = -1
-        self.current_leader = req.leaderId
-        self.timeout = time() + randint(3, 12)
-        self.current_role = Roles.Follower
-        self.role = self.server.change_state(self, Roles.Follower)
-        print("Candidate -> Follower")
-    return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=False)
+    def append_entries(self, req):
+        if req.term > self.current_term or req.prevLogTerm > self.last_log_term \
+                or ((req.prevLogTerm != 0 and self.last_log_term !=0) and req.prevLogTerm == self.last_log_term and req.prevLogIndex >= self.last_log_index):
+            self.current_term = req.term
+            self.voted_for = -1
+            self.current_leader = req.leaderId
+            self.timeout = time() + randint(3, 12)
+            self.current_role = Roles.Follower
+            self.role = self.server.change_state(self, Roles.Follower)
+            print("Candidate -> Follower")
+        return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=False)
+
+    def vote(self, req, context):
+        log_ok = ((req.lastLogTerm > self.last_log_term) or (
+                req.lastLogTerm == self.last_log_term and req.lastLogIndex >= self.last_log_index))
+        term_ok = ((req.term > self.current_term) or (
+                req.term == self.current_term and self.voted_for in (None, req.candidateId)))
+
+        vote_granted = False
+        if term_ok and log_ok:
+            self.timeout = time() + randint(3, 12)
+            self.current_term = req.term
+            self.current_role = Roles.Follower
+            self.role = self.server.change_state(self, Roles.Follower)
+            self.voted_for = req.candidateId
+            vote_granted = True
+        return pb2.ResponseVoteRPC(term=self.current_term, voteGranted=vote_granted)
