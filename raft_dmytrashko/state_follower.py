@@ -20,12 +20,12 @@ class Follower(State):
         success = False
 
         if req.term < self.current_term:
-            return pb2.ResponseAppendEntriesRPC(term=self.current_term, successs=success)
+            return success
 
         if self.last_log_term < req.prevLogTerm and self.last_log_index > self.commit_index:
             self.log.pop(req.prevLogIndex, None)
             self.last_log_index = self.commit_index
-            return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=success)
+            return success
 
         if req.leaderCommit > self.commit_index:
             for i in range(self.commit_index, req.leaderCommit + 1):
@@ -40,7 +40,7 @@ class Follower(State):
         elif req.prevLogIndex == self.last_log_index and req.prevLogTerm == self.last_log_term:
             success = True
 
-        return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=success)
+        return success
 
     def vote(self, req, context):
         log_ok = ((req.lastLogTerm > self.last_log_term) or (
@@ -57,3 +57,11 @@ class Follower(State):
             self.voted_for = req.candidateId
             vote_granted = True
         return pb2.ResponseVoteRPC(term=self.current_term, voteGranted=vote_granted)
+
+    def list_messages(self, request):
+        print("""Node current role -  {}, current term - {}, commit index - {}
+                 last log index - {}, last log term - {}, log - {}
+              """.format(self.current_role, self.current_term, self.commit_index, self.last_log_index,
+                         self.last_log_term, self.log))
+        response = pb2.ResponseListMessagesRPC(logs="".join(self.log.values()))
+        return response

@@ -15,6 +15,7 @@ class RaftServer(pb2_grpc.RaftServicer):
     def __init__(self, list_nodes):
         self.role = Follower(self, list_nodes, None)
         self.current_role = Roles.Follower
+        self.current_term = self.role.current_term
 
         if isfile('log.txt'):
             with open('log.txt', 'r') as fp:
@@ -44,7 +45,11 @@ class RaftServer(pb2_grpc.RaftServicer):
 
     def AppendMessage(self, request, context):
         print("Append message")
-        response = self.role.append_entries(request)
+        success = self.role.append_entries(request)
+        return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=success)
+
+    def ListMessages(self, request, context):
+        response = self.role.list_messages(request)
         return response
 
 

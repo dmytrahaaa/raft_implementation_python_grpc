@@ -34,10 +34,14 @@ class Leader(State):
                 threads.append(t)
                 t.start()
 
-            for x in threads:
-                x.join()
+            for x in range(self.majority):
+                try:
+                    threads[x].join()
+                except RuntimeError:
+                    pass
 
-            self.timeout = time() + 2
+
+            self.timeout = time() + randint(3, 12)
 
     def broadcast(self, address, prev_log_index, req, stub):
         try:
@@ -51,7 +55,6 @@ class Leader(State):
                 self.current_role = Roles.Follower
                 print("Leader -> Follower")
 
-            sleep(uniform(0, 0.5))
             while response.success is False:
                 if prev_log_index >= 1:
                     prev_log_index -= 1
@@ -74,6 +77,13 @@ class Leader(State):
             print("Cannot connect to {} ".format(address) + "with error: " + str(e))
 
     def append_entries(self, req):
+
+        entry = pb2.LogEntry(term=self.current_term, command=req.entry.command)
+        self.last_log_term = self.current_term
+        self.last_log_index += 1
+        self.log[self.last_log_index] = entry
+        success = False
+
         if req.term > self.current_term:
             self.current_term = req.term
             self.voted_for = -1
@@ -81,44 +91,35 @@ class Leader(State):
             self.timeout = time() + randint(3, 12)
             self.current_role = Roles.Follower
             self.role = self.server.change_state(self, Roles.Follower)
-            return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=True)
+            success = True
+            return success
 
-        if req.term < self.current_term:
-            return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=False)
+        elif req.term < self.current_term:
+            return success
 
-        entry = pb2.LogEntry(term=self.current_term, command=req.entry.command)
-        self.last_log_term = self.current_term
-        self.last_log_index += 1
-        self.log[self.last_log_index] = entry
-        req = pb2.RequestAppendEntriesRPC(term=self.current_term, leaderId=self.id,
-                                          prevLogIndex=self.last_log_index,
-                                          prevLogTerm=self.last_log_term, entry=entry,
-                                          leaderCommit=self.commit_index)
+        # self.current_term = req.term
+        # self.current_leader = req.leaderId
+        # self.timeout = time() + randint(3, 12)
 
-        que = Queue()
-        thread_list = []
-        responses = []
-        for address in self.list_nodes.values():
-            channel = grpc.insecure_channel(address)
-            stub = pb2_grpc.RaftStub(channel)
+        if self.last_log_term < req.prevLogTerm and self.last_log_index > self.commit_index:
+            self.log.pop(req.prevLogIndex, None)
+            self.last_log_index = self.commit_index
+            return success
 
-            t = threading.Thread(target=lambda q, arg1, arg2, arg3, arg4: q.put(self.broadcast(arg1, arg2, arg3, arg4)),
-                                 args=(que, address, self.last_log_index, req, stub))
-            t.start()
-            thread_list.append(t)
+        if req.leaderCommit > self.commit_index:
+            for i in range(self.commit_index, req.leaderCommit + 1):
+                if i in self.log and req.prevLogTerm == self.last_log_term:
+                    self.commit_index = i
 
-        for t in thread_list:
-            t.join()
+        if req.prevLogIndex == self.last_log_index + 1 and req.prevLogTerm >= self.last_log_term:
+            self.log[req.prevLogIndex] = req.entry
+            self.last_log_index += 1
+            self.last_log_term = req.prevLogTerm
+            success = True
+        elif req.prevLogIndex == self.last_log_index and req.prevLogTerm == self.last_log_term:
+            success = True
 
-        while not que.empty():
-            result = que.get()
-            if result:
-                responses.append(result.success)
-
-        if responses.count(True) >= self.majority - 1:
-            self.commit_index = self.last_log_index
-
-        return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=True)
+        return success
 
     def vote(self, req, context):
         log_ok = ((req.lastLogTerm > self.last_log_term) or (
@@ -135,3 +136,10 @@ class Leader(State):
             self.voted_for = req.candidateId
             vote_granted = True
         return pb2.ResponseVoteRPC(term=self.current_term, voteGranted=vote_granted)
+
+    def list_messages(self, request):
+        print("""Node current role -  {}, current term - {}, commit index - {}
+                 last log index - {}, last log term - {}, log - {}
+              """.format(self.current_role, self.current_term, self.commit_index, self.last_log_index, self.last_log_term, self.log))
+        response = pb2.ResponseListMessagesRPC(logs="".join(self.log.values()))
+        return response

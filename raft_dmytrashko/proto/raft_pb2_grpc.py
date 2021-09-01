@@ -6,9 +6,7 @@ from . import raft_pb2 as raft__pb2
 
 
 class RaftStub(object):
-    """package "./proto"
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
         """Constructor.
@@ -26,12 +24,15 @@ class RaftStub(object):
                 request_serializer=raft__pb2.RequestAppendEntriesRPC.SerializeToString,
                 response_deserializer=raft__pb2.ResponseAppendEntriesRPC.FromString,
                 )
+        self.ListMessages = channel.unary_unary(
+                '/Raft/ListMessages',
+                request_serializer=raft__pb2.RequestListMessagesRPC.SerializeToString,
+                response_deserializer=raft__pb2.ResponseListMessagesRPC.FromString,
+                )
 
 
 class RaftServicer(object):
-    """package "./proto"
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def Vote(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -40,6 +41,12 @@ class RaftServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def AppendMessage(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListMessages(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -58,6 +65,11 @@ def add_RaftServicer_to_server(servicer, server):
                     request_deserializer=raft__pb2.RequestAppendEntriesRPC.FromString,
                     response_serializer=raft__pb2.ResponseAppendEntriesRPC.SerializeToString,
             ),
+            'ListMessages': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListMessages,
+                    request_deserializer=raft__pb2.RequestListMessagesRPC.FromString,
+                    response_serializer=raft__pb2.ResponseListMessagesRPC.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'Raft', rpc_method_handlers)
@@ -66,9 +78,7 @@ def add_RaftServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Raft(object):
-    """package "./proto"
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def Vote(request,
@@ -101,5 +111,22 @@ class Raft(object):
         return grpc.experimental.unary_unary(request, target, '/Raft/AppendMessage',
             raft__pb2.RequestAppendEntriesRPC.SerializeToString,
             raft__pb2.ResponseAppendEntriesRPC.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListMessages(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Raft/ListMessages',
+            raft__pb2.RequestListMessagesRPC.SerializeToString,
+            raft__pb2.ResponseListMessagesRPC.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

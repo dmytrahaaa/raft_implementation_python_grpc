@@ -45,28 +45,28 @@ services:
     networks:
       - localnet
 
-  raft-node-4:
-    container_name: raft-4
-    build:
-      context: raft_dmytrashko/
-      dockerfile: Dockerfile
-    environment:
-      PYTHONUNBUFFERED: 1
-    command: python3 raft_server.py 10004 4
-    ports:
-      - "10004:10004"
-    networks:
-      - localnet
-
-  raft-node-5:
-    container_name: raft-5
-    build:
-      context: raft_dmytrashko/
-      dockerfile: Dockerfile
-    environment:
-      PYTHONUNBUFFERED: 1
-    command: python3 raft_server.py 10005 5
-    ports:
-      - "10005:10005"
-    networks:
-      - localnet
+#  raft-node-4:
+#    container_name: raft-4
+#    build:
+#      context: raft_dmytrashko/
+#      dockerfile: Dockerfile
+#    environment:
+#      PYTHONUNBUFFERED: 1
+#    command: python3 raft_server.py 10004 4
+#    ports:
+#      - "10004:10004"
+#    networks:
+#      - localnet
+#
+#  raft-node-5:
+#    container_name: raft-5
+#    build:
+#      context: raft_dmytrashko/
+#      dockerfile: Dockerfile
+#    environment:
+#      PYTHONUNBUFFERED: 1
+#    command: python3 raft_server.py 10005 5
+#    ports:
+#      - "10005:10005"
+#    networks:
+#      - localnet

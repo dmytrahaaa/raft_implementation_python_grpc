@@ -4,6 +4,7 @@ syntax = "proto3";
 service Raft {
   rpc Vote (RequestVoteRPC) returns (ResponseVoteRPC) {}
   rpc AppendMessage (RequestAppendEntriesRPC) returns (ResponseAppendEntriesRPC) {}
+  rpc ListMessages (RequestListMessagesRPC) returns (ResponseListMessagesRPC) {}
 }
 
 message RequestVoteRPC {
@@ -35,4 +36,15 @@ message ResponseAppendEntriesRPC {
 message LogEntry {
   int32 term = 1;
   string command = 2;
+}
+
+message LogMessage {
+  string log = 1;
+}
+
+message RequestListMessagesRPC {
+}
+
+message ResponseListMessagesRPC {
+  repeated LogMessage logs = 1;
 }

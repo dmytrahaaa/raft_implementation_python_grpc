@@ -26,9 +26,9 @@ class Candidate(State):
                 threading.Thread(target=self.vote_init,
                                  args=(barrier, req, stub)).start()
             barrier.reset()
-            # barrier.abort()
             self.timeout = time() + randint(3, 12)
-        elif self.votes_received >= self.majority:
+
+        if self.votes_received >= self.majority:
             print("Candidate -> Leader")
             self.votes_received = 1
             self.voted_for = self.id
@@ -48,8 +48,10 @@ class Candidate(State):
 
 
     def append_entries(self, req):
-        if req.term > self.current_term or req.prevLogTerm > self.last_log_term \
-                or ((req.prevLogTerm != 0 and self.last_log_term !=0) and req.prevLogTerm == self.last_log_term and req.prevLogIndex >= self.last_log_index):
+        if req.term > self.current_term or req.prevLogTerm > self.last_log_term or \
+                (req.prevLogTerm == self.last_log_term and req.prevLogIndex >= self.last_log_index
+                    and req.prevLogTerm != 0 and self.last_log_term != 0
+                ):
             self.current_term = req.term
             self.voted_for = -1
             self.current_leader = req.leaderId
@@ -57,7 +59,8 @@ class Candidate(State):
             self.current_role = Roles.Follower
             self.role = self.server.change_state(self, Roles.Follower)
             print("Candidate -> Follower")
-        return pb2.ResponseAppendEntriesRPC(term=self.current_term, success=False)
+        success = False
+        return success
 
     def vote(self, req, context):
         log_ok = ((req.lastLogTerm > self.last_log_term) or (
@@ -74,3 +77,11 @@ class Candidate(State):
             self.voted_for = req.candidateId
             vote_granted = True
         return pb2.ResponseVoteRPC(term=self.current_term, voteGranted=vote_granted)
+
+    def list_messages(self, request):
+        print("""Node current role -  {}, current term - {}, commit index - {}
+                 last log index - {}, last log term - {}, log - {}
+              """.format(self.current_role, self.current_term, self.commit_index, self.last_log_index,
+                         self.last_log_term, self.log))
+        response = pb2.ResponseListMessagesRPC(logs="".join(self.log.values()))
+        return response
