@@ -34,11 +34,15 @@ class Leader(State):
                 threads.append(t)
                 t.start()
 
-            for x in range(self.majority):
-                try:
-                    threads[x].join()
-                except RuntimeError:
-                    pass
+
+            for x in threads:
+                i = 0
+                while i < self.majority:
+                    try:
+                        x.join()
+                        i += 1
+                    except RuntimeError:
+                        pass
 
 
             self.timeout = time() + randint(3, 12)
